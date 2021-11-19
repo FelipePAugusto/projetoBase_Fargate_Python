@@ -1,0 +1,43 @@
+[
+%{ for name in container_names ~}
+    {
+        "name": "${name}",
+        "image": "${repository_urls[index(container_names, name)]}:latest",
+        "portMappings": [
+            {
+                "containerPort": ${container_ports[index(container_names, name)]},
+                "hostPort": ${container_ports[index(container_names, name)]},
+                "protocol": "tcp"
+            }
+        ],
+        "essential": true,
+        "environment": [
+            {
+                "name": "APP_NAME",
+                "value": "${app_name}"
+            },
+            {
+                "name": "AWS_REGION",
+                "value": "${aws_region}"
+            },
+            {
+                "name": "ENVIRONMENT_NAME",
+                "value": "${environment_name}"
+            }
+        ],
+        "privileged": false,
+        "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+              "awslogs-group": "${cloudwatch_log_group_name}",
+              "awslogs-region": "${aws_region}",
+              "awslogs-stream-prefix": "ecs"
+            }
+        }
+    %{ if index(container_names, name) != length(container_names) - 1 ~}
+    },
+    %{ else ~}
+    }
+    %{ endif ~}
+%{ endfor ~}
+]

@@ -1,0 +1,43 @@
+version: '3.3'
+
+services:
+  uvicorn:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: consolida-pagamentos-uvicorn
+    # volumes:
+    #   - ./src:/app
+    # env_file: ".env"
+    ports:
+      # - 5000:80
+      - 80:80
+    networks:
+      - mm_devdocker
+    external_links:
+      - docker_php7.2_1
+    
+  nginx:
+    image: nginx:alpine
+    container_name: consolida-pagamentos-nginx
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ./src:/var/www
+      - ./src/environments/nginx/conf.d/:/etc/nginx/conf.d/
+      - ./src/environments/nginx/:/var/log/nginx
+    # ports:
+    #   # - "80:80"
+    #   - "443:443"
+    #   - "8080:80" #MUDEI PARA NÃO COINCIDIR COM O NGINX DO TIO-PATINHAS. VOLTAR PARA "80:80"
+    networks:
+      - mm_devdocker
+    depends_on:
+      - uvicorn
+    external_links:
+      - docker_php7.2_1
+
+networks:
+  mm_devdocker:
+    external:
+      name: mm_devdocker_default

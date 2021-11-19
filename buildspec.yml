@@ -1,0 +1,32 @@
+version: 0.2
+env:
+  secrets-manager:
+    DOCKERHUB_USERNAME: devops:DOCKERHUB_USERNAME
+    DOCKERHUB_PASSWORD: devops:DOCKERHUB_PASSWORD
+phases:
+  pre_build:
+    commands:
+      # Logging in to Amazon ECR
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      # Logging in to Docker Hub
+      - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+  build:
+    commands:
+      # Building Docker image
+      - |
+        docker build \
+          -t $CONTAINER_NAME_0 \
+          --build-arg CONTAINER_PORT=$CONTAINER_PORT_0 \
+          -f docker/Dockerfile .
+  post_build:
+    commands:
+      # Tagging Docker images
+      - docker tag $CONTAINER_NAME_0:latest $REPOSITORY_URI_0:latest
+      # Pushing Docker images
+      - docker push $REPOSITORY_URI_0:latest
+      # Writing image definitions file
+      - printf '[' > imagedefinitions.json
+      - printf '{"name":"%s","imageUri":"%s"}' $CONTAINER_NAME_0 $REPOSITORY_URI_0:latest >> imagedefinitions.json
+      - printf ']' >> imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
